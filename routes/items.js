@@ -37,6 +37,7 @@ router.get("/:id", authenticateToken, (req, res) => {
 });
 
 // Create a new item (POST)
+// Create a new item (POST)
 router.post("/", authenticateToken, async (req, res) => {
   try {
     const { name, quantity } = req.body;
@@ -45,22 +46,41 @@ router.post("/", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "Name and quantity are required" });
     }
 
-    const query = "INSERT INTO items (name, quantity) VALUES (?, ?)";
-    const values = [name, quantity];
+    // Find the smallest missing ID
+    const idQuery = `
+      SELECT MIN(t1.id + 1) AS nextAvailableID
+      FROM items t1
+      LEFT JOIN items t2 ON t1.id + 1 = t2.id
+      WHERE t2.id IS NULL
+    `;
 
-    db.query(query, values, (err, result) => {
+    db.query(idQuery, (err, result) => {
       if (err) {
-        console.error("Error adding item:", err);
+        console.error("Error finding next available ID:", err);
         return res.status(500).json({ message: "Database error" });
       }
 
-      res.status(201).json({ id: result.insertId, name, quantity });
+      const nextId = result[0].nextAvailableID || 1; // Default to 1 if no rows exist
+
+      // Insert the new item using the smallest available ID
+      const insertQuery = "INSERT INTO items (id, name, quantity) VALUES (?, ?, ?)";
+      const values = [nextId, name, quantity];
+
+      db.query(insertQuery, values, (err, result) => {
+        if (err) {
+          console.error("Error adding item:", err);
+          return res.status(500).json({ message: "Database error" });
+        }
+
+        res.status(201).json({ id: nextId, name, quantity });
+      });
     });
   } catch (err) {
     console.error("Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 // Delete an item
 router.delete("/:id", authenticateToken, (req, res) => {
