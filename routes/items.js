@@ -29,8 +29,6 @@ router.get("/", authenticateToken, async (req, res) => {
   }
 });
 
-
-
 // Get a single item by ID
 router.get("/:id", authenticateToken, (req, res) => {
   db.query("SELECT * FROM items WHERE id = ?", [req.params.id], (err, results) => {
@@ -82,6 +80,5 @@ router.put("/:id", authenticateToken, (req, res) => {
     res.json({ message: "Item updated successfully" });
   });
 });
-
 
 module.exports = router;
