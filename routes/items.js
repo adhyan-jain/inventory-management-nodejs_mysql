@@ -37,7 +37,6 @@ router.get("/:id", authenticateToken, (req, res) => {
 });
 
 // Create a new item (POST)
-// Create a new item (POST)
 router.post("/", authenticateToken, async (req, res) => {
   try {
     const { name, quantity } = req.body;
