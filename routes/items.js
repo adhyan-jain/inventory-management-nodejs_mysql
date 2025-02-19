@@ -10,11 +10,20 @@ router.get("/", (req, res) => {
   limit = parseInt(limit) || 5;
   const offset = (page - 1) * limit;
 
-  db.query("SELECT * FROM items LIMIT ? OFFSET ?", [limit, offset], (err, results) => {
+  db.query("SELECT COUNT(*) AS totalItems FROM items", (err, countResult) => {
     if (err) {
       return res.status(500).json({ error: "Server error", details: err.message });
     }
-    res.json({ page, limit, items: results });
+
+    const totalItems = countResult[0].totalItems; // Extract total count
+
+    db.query("SELECT * FROM items LIMIT ? OFFSET ?", [limit, offset], (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: "Server error", details: err.message });
+      }
+
+      res.json({ page, limit, totalItems, items: results });
+    });
   });
 });
 
